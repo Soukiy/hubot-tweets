@@ -89,18 +89,21 @@ doUser = (msg) ->
 
     return msg.send response
 
-doTweet = (msg, tweet) ->
+doTweet = (msg, tweet, robot) ->
   return if !tweet
   tweetObj = status: tweet
   twit = getTwit()
-  twit.post 'statuses/update', tweetObj, (err, reply) ->
-    if err
-      msg.send "Error sending tweet!"
-    else
-      username = reply?.user?.screen_name
-      id = reply.id_str
-      if (username && id)
-        msg.send "https://www.twitter.com/#{username}/status/#{id}"
+  if robot.auth.hasRole(msg.envelope.user, "twitter")
+    twit.post 'statuses/update', tweetObj, (err, reply) ->
+      if err
+        msg.send "Error sending tweet!"
+      else
+        username = reply?.user?.screen_name
+        id = reply.id_str
+        if (username && id)
+          msg.send "https://www.twitter.com/#{username}/status/#{id}"
+  else
+    msg.send "Error sending tweet!"
 
 module.exports = (robot) ->
   robot.respond /twitter (\S+)\s*(.+)?/i, (msg) ->
@@ -126,10 +129,10 @@ module.exports = (robot) ->
       doSearch(msg)
 
     else if (command == 'tweet')
-      doTweet(msg, msg.match[2])
+      doTweet(msg, msg.match[2], robot)
 
     else if (command == 'user')
       doUser(msg, msg.match[2])
 
   robot.respond /tweet\s*(.+)?/i, (msg) ->
-    doTweet(msg, msg.match[1])
+    doTweet(msg, msg.match[1], robot)
